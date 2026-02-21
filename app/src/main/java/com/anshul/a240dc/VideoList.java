@@ -8,6 +8,8 @@ import android.os.Environment;
 import android.os.StrictMode;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.AnimationUtils;
+import android.view.animation.LayoutAnimationController;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -35,9 +37,8 @@ public class VideoList extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_video_list);
-        changeStatusBarColor("#ffffff");
+        changeStatusBarColor("#000000"); // Changed to black for dark mode aesthetic
 
-        // Bypass Android's strict FileUri restriction to easily launch external video players
         StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
         StrictMode.setVmPolicy(builder.build());
 
@@ -45,22 +46,24 @@ public class VideoList extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         videoList = new ArrayList<>();
-
-        // Load real recorded videos from storage
         loadVideosFromStorage();
 
-        // Pass 'this' context to adapter so it can start the video player intent
         adapter = new VideoAdapter(this, videoList);
         recyclerView.setAdapter(adapter);
+
+        // --- NEW: Staggered Slide-in Animation ---
+        LayoutAnimationController controller = new LayoutAnimationController(
+                AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left));
+        controller.setDelay(0.15f); // Delay between each item appearing
+        controller.setOrder(LayoutAnimationController.ORDER_NORMAL);
+        recyclerView.setLayoutAnimation(controller);
     }
 
     private void loadVideosFromStorage() {
         File dcimFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
         File videoFolder = new File(dcimFolder, "ProCamera");
 
-        if (!videoFolder.exists() || !videoFolder.isDirectory()) {
-            return; // No videos recorded yet
-        }
+        if (!videoFolder.exists() || !videoFolder.isDirectory()) return;
 
         File[] files = videoFolder.listFiles();
         if (files == null) return;
@@ -70,12 +73,9 @@ public class VideoList extends AppCompatActivity {
         for (File file : files) {
             if (file.getName().endsWith(".mp4")) {
                 String fileName = file.getName();
-
-                // Lookup the metadata using the file name as the key
                 String metadata = prefs.getString(fileName, null);
 
                 if (metadata != null) {
-                    // Split the saved string (duration,fps,iso,shutter)
                     String[] data = metadata.split(",");
                     if (data.length == 4) {
                         String duration = data[0];
@@ -83,7 +83,6 @@ public class VideoList extends AppCompatActivity {
                         int iso = Integer.parseInt(data[2]);
                         String shutter = data[3];
 
-                        // Add the actual recorded video to the list
                         videoList.add(new VideoItem(fileName, duration, fps, iso, shutter, file.getAbsolutePath()));
                     }
                 }

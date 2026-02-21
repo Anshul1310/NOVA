@@ -1,6 +1,8 @@
 package com.anshul.a240dc;
 
 import android.Manifest;
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -20,9 +22,14 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.transition.AutoTransition;
+import android.transition.TransitionManager;
 import android.util.Range;
+import android.util.Size; // NEW IMPORT FOR SIZE FIX
+import android.view.HapticFeedbackConstants;
 import android.view.Surface;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
@@ -54,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
     private Group groupSettings, groupRecording;
     private TextView tvTimer;
     private ImageView btnPauseResume, btnStop, btnRecord;
+    private ObjectAnimator pulseAnimator;
 
     // Recording Info Overlays
     private TextView tvRecFps, tvRecIso, tvRecShutter;
@@ -77,10 +85,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         if (!supportsHighSpeedVideo(120)) {
             startActivity(new Intent(this, UnsupportedDeviceActivity.class));
@@ -90,7 +96,6 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        // Bind Base UI
         groupSettings = findViewById(R.id.group_settings);
         groupRecording = findViewById(R.id.group_recording);
         tvTimer = findViewById(R.id.tv_timer);
@@ -98,7 +103,6 @@ public class MainActivity extends AppCompatActivity {
         btnPauseResume = findViewById(R.id.btn_pause_resume);
         btnStop = findViewById(R.id.btn_stop);
 
-        // Bind Recording Overlays
         tvRecFps = findViewById(R.id.tv_rec_fps);
         tvRecIso = findViewById(R.id.tv_rec_iso);
         tvRecShutter = findViewById(R.id.tv_rec_shutter);
@@ -111,10 +115,31 @@ public class MainActivity extends AppCompatActivity {
         btnPauseResume.setOnClickListener(v -> togglePauseResume());
         btnStop.setOnClickListener(v -> stopRecording());
 
-        // Video List Navigation
         View btnVideoList = findViewById(R.id.btn_video_list);
         if (btnVideoList != null) {
             btnVideoList.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, VideoList.class)));
+        }
+
+        // Setup Pulsing Animation for Recording Dot
+        pulseAnimator = ObjectAnimator.ofPropertyValuesHolder(
+                findViewById(R.id.ic_recording_dot),
+                PropertyValuesHolder.ofFloat("scaleX", 0.8f, 1.2f),
+                PropertyValuesHolder.ofFloat("scaleY", 0.8f, 1.2f),
+                PropertyValuesHolder.ofFloat("alpha", 1f, 0.4f)
+        );
+        pulseAnimator.setDuration(600);
+        pulseAnimator.setRepeatCount(ObjectAnimator.INFINITE);
+        pulseAnimator.setRepeatMode(ObjectAnimator.REVERSE);
+    }
+
+    private void animateChipSelection(ChipGroup group, Chip selectedChip) {
+        for (int i = 0; i < group.getChildCount(); i++) {
+            Chip c = (Chip) group.getChildAt(i);
+            if (c == selectedChip) {
+                c.animate().scaleX(1.15f).scaleY(1.15f).setDuration(200).start();
+            } else {
+                c.animate().scaleX(1.0f).scaleY(1.0f).setDuration(200).start();
+            }
         }
     }
 
@@ -127,9 +152,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        if (isRecording) {
-            stopRecording();
-        }
+        if (isRecording) stopRecording();
         closeCamera();
         stopBackgroundThread();
         super.onPause();
@@ -148,9 +171,7 @@ public class MainActivity extends AppCompatActivity {
                 backgroundThread.join();
                 backgroundThread = null;
                 backgroundHandler = null;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            } catch (InterruptedException e) { e.printStackTrace(); }
         }
     }
 
@@ -164,9 +185,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             manager.openCamera(cameraId, stateCallback, backgroundHandler);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
+        } catch (CameraAccessException e) { e.printStackTrace(); }
     }
 
     private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
@@ -182,18 +201,9 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private void closeCamera() {
-        if (captureSession != null) {
-            captureSession.close();
-            captureSession = null;
-        }
-        if (cameraDevice != null) {
-            cameraDevice.close();
-            cameraDevice = null;
-        }
-        if (mediaRecorder != null) {
-            mediaRecorder.release();
-            mediaRecorder = null;
-        }
+        if (captureSession != null) { captureSession.close(); captureSession = null; }
+        if (cameraDevice != null) { cameraDevice.close(); cameraDevice = null; }
+        if (mediaRecorder != null) { mediaRecorder.release(); mediaRecorder = null; }
     }
 
     private void startRecording() {
@@ -234,8 +244,12 @@ public class MainActivity extends AppCompatActivity {
                                         tvRecIso.setText("ISO " + selectedIso);
                                         tvRecShutter.setText(selectedShutter + "s");
 
+                                        // Smooth Transition
+                                        TransitionManager.beginDelayedTransition((ViewGroup) findViewById(android.R.id.content), new AutoTransition());
                                         groupSettings.setVisibility(View.GONE);
                                         groupRecording.setVisibility(View.VISIBLE);
+
+                                        pulseAnimator.start();
 
                                         timerHandler.postDelayed(timerRunnable, 1000);
                                     } catch (Exception e) {
@@ -244,19 +258,14 @@ public class MainActivity extends AppCompatActivity {
                                         Toast.makeText(MainActivity.this, "Failed to start recorder.", Toast.LENGTH_SHORT).show();
                                     }
                                 });
-                            } catch (CameraAccessException e) {
-                                e.printStackTrace();
-                            }
+                            } catch (CameraAccessException e) { e.printStackTrace(); }
                         }
                         @Override
                         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                            runOnUiThread(() -> Toast.makeText(MainActivity.this, "Failed to configure camera.", Toast.LENGTH_SHORT).show());
+                            runOnUiThread(() -> Toast.makeText(MainActivity.this, "Failed to configure high-speed camera. Unsupported resolution.", Toast.LENGTH_SHORT).show());
                         }
                     }, backgroundHandler);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
     }
 
     private void setupMediaRecorder() throws IOException {
@@ -274,12 +283,22 @@ public class MainActivity extends AppCompatActivity {
         videoFile = new File(videoFolder, "VID_" + System.currentTimeMillis() + ".mp4");
         mediaRecorder.setOutputFile(videoFile.getAbsolutePath());
 
-        mediaRecorder.setVideoEncodingBitRate(100_000_000);
-        mediaRecorder.setVideoFrameRate(fps);
-        mediaRecorder.setVideoSize(1920, 1080);
+        // ENCODERS
         mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
         mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
 
+        // --- FIX: DYNAMICALLY CHECK RESOLUTION ---
+        Size bestSize = getBestHighSpeedSize(fps);
+        mediaRecorder.setVideoSize(bestSize.getWidth(), bestSize.getHeight());
+
+        // Dynamically adjust bitrate based on resolution (720p needs less data)
+        if (bestSize.getWidth() == 1920) {
+            mediaRecorder.setVideoEncodingBitRate(100_000_000); // 100 Mbps for 1080p
+        } else {
+            mediaRecorder.setVideoEncodingBitRate(50_000_000);  // 50 Mbps for 720p
+        }
+
+        mediaRecorder.setVideoFrameRate(fps);
         mediaRecorder.prepare();
     }
 
@@ -288,10 +307,12 @@ public class MainActivity extends AppCompatActivity {
         if (isPaused) {
             isPaused = false;
             btnPauseResume.setImageResource(android.R.drawable.ic_media_pause);
+            pulseAnimator.resume();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && mediaRecorder != null) mediaRecorder.resume();
         } else {
             isPaused = true;
             btnPauseResume.setImageResource(android.R.drawable.ic_media_play);
+            pulseAnimator.pause();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && mediaRecorder != null) mediaRecorder.pause();
         }
     }
@@ -300,6 +321,7 @@ public class MainActivity extends AppCompatActivity {
         if (!isRecording) return;
         isRecording = false;
         timerHandler.removeCallbacks(timerRunnable);
+        pulseAnimator.cancel();
 
         try {
             if (captureSession != null) {
@@ -310,26 +332,19 @@ public class MainActivity extends AppCompatActivity {
                 mediaRecorder.stop();
                 mediaRecorder.reset();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
 
         if (videoFile != null) {
-            // Calculate format string for duration
             String durationStr = String.format("%02d:%02d", secondsRecorded / 60, secondsRecorded % 60);
-
-            // Format: duration,fps,iso,shutter
             String metadata = durationStr + "," + selectedFps + "," + selectedIso + "," + selectedShutter;
 
-            // Save settings into SharedPreferences using the exact filename as the key
-            getSharedPreferences("VideoMetadata", MODE_PRIVATE)
-                    .edit()
-                    .putString(videoFile.getName(), metadata)
-                    .apply();
-
+            // Saves metadata strictly tied to the filename
+            getSharedPreferences("VideoMetadata", MODE_PRIVATE).edit().putString(videoFile.getName(), metadata).apply();
             Toast.makeText(this, "Saved to DCIM/ProCamera!\n" + videoFile.getName(), Toast.LENGTH_LONG).show();
         }
 
+        // Smooth Transition
+        TransitionManager.beginDelayedTransition((ViewGroup) findViewById(android.R.id.content), new AutoTransition());
         groupSettings.setVisibility(View.VISIBLE);
         groupRecording.setVisibility(View.GONE);
         btnPauseResume.setImageResource(android.R.drawable.ic_media_pause);
@@ -350,19 +365,13 @@ public class MainActivity extends AppCompatActivity {
         tvTimer.setText(String.format("%02d:%02d", secondsRecorded / 60, secondsRecorded % 60));
     }
 
-    // ==========================================
-    // CAMERA HARDWARE MANUAL SETTINGS
-    // ==========================================
     public void applyManualSettingsToCamera(CaptureRequest.Builder builder) {
         int fps = Integer.parseInt(selectedFps);
-
         builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
         builder.set(CaptureRequest.SENSOR_SENSITIVITY, Integer.parseInt(selectedIso));
         builder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, calculateShutterSpeedNanos(selectedShutter));
-
         long frameDurationNanos = 1_000_000_000L / fps;
         builder.set(CaptureRequest.SENSOR_FRAME_DURATION, frameDurationNanos);
-
         builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(fps, fps));
     }
 
@@ -372,8 +381,11 @@ public class MainActivity extends AppCompatActivity {
         return 1_000_000_000L / 120;
     }
 
-    private boolean supportsHighSpeedVideo(int targetFps) {
+    // --- NEW: Gets the best supported resolution to prevent Surface Size Crashes ---
+    private Size getBestHighSpeedSize(int targetFps) {
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        Size fallbackSize = new Size(1280, 720); // Default to 720p fallback
+
         try {
             for (String cameraId : manager.getCameraIdList()) {
                 CameraCharacteristics chars = manager.getCameraCharacteristics(cameraId);
@@ -386,10 +398,60 @@ public class MainActivity extends AppCompatActivity {
                         if (cap == CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_CONSTRAINED_HIGH_SPEED_VIDEO) {
                             StreamConfigurationMap map = chars.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
                             if (map != null) {
-                                for (Range<Integer> range : map.getHighSpeedVideoFpsRanges()) {
-                                    if (range.getUpper() >= targetFps) return true;
+                                Size size1080p = new Size(1920, 1080);
+                                Size[] sizes = map.getHighSpeedVideoSizes();
+
+                                // 1. Check if 1080p is supported at the target FPS
+                                for (Size s : sizes) {
+                                    if (s.getWidth() == 1920 && s.getHeight() == 1080) {
+                                        try {
+                                            for (Range<Integer> range : map.getHighSpeedVideoFpsRangesFor(size1080p)) {
+                                                if (range.getUpper() >= targetFps) return size1080p;
+                                            }
+                                        } catch (IllegalArgumentException e) { /* Ignored */ }
+                                    }
+                                }
+
+                                // 2. If 1080p isn't supported, check if 720p is supported
+                                Size size720p = new Size(1280, 720);
+                                for (Size s : sizes) {
+                                    if (s.getWidth() == 1280 && s.getHeight() == 720) {
+                                        try {
+                                            for (Range<Integer> range : map.getHighSpeedVideoFpsRangesFor(size720p)) {
+                                                if (range.getUpper() >= targetFps) return size720p;
+                                            }
+                                        } catch (IllegalArgumentException e) { /* Ignored */ }
+                                    }
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        } catch (CameraAccessException e) { e.printStackTrace(); }
+        return fallbackSize;
+    }
+
+    // --- NEW: Strictly check 1080p at target FPS ---
+    private boolean supportsHighSpeedAt1080p(int targetFps) {
+        Size size = getBestHighSpeedSize(targetFps);
+        return size.getWidth() == 1920 && size.getHeight() == 1080;
+    }
+
+    // Legacy general check just to boot the app
+    private boolean supportsHighSpeedVideo(int targetFps) {
+        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        try {
+            for (String cameraId : manager.getCameraIdList()) {
+                CameraCharacteristics chars = manager.getCameraCharacteristics(cameraId);
+                Integer facing = chars.get(CameraCharacteristics.LENS_FACING);
+                if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) continue;
+
+                int[] capabilities = chars.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
+                if (capabilities != null) {
+                    for (int cap : capabilities) {
+                        if (cap == CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_CONSTRAINED_HIGH_SPEED_VIDEO) {
+                            return true; // As long as it supports SOME high speed video, let them in
                         }
                     }
                 }
@@ -398,15 +460,23 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    // ==========================================
-    // UI SETUP
-    // ==========================================
     private void setupFpsToggle() {
         MaterialButtonToggleGroup toggleGroup = findViewById(R.id.toggle_fps);
         toggleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (isChecked) {
-                if (checkedId == R.id.btn_120fps) selectedFps = "120";
-                else if (checkedId == R.id.btn_240fps) selectedFps = "240";
+                group.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                if (checkedId == R.id.btn_120fps) {
+                    selectedFps = "120";
+                } else if (checkedId == R.id.btn_240fps) {
+                    // --- ENFORCE STRICT 240 FPS @ 1080p RULE ---
+                    if (!supportsHighSpeedAt1080p(240)) {
+                        Toast.makeText(MainActivity.this, "Your device does not support 240 FPS at 1080p", Toast.LENGTH_LONG).show();
+                        group.check(R.id.btn_120fps); // Snap back to 120
+                        selectedFps = "120";
+                    } else {
+                        selectedFps = "240";
+                    }
+                }
             }
         });
     }
@@ -417,12 +487,20 @@ public class MainActivity extends AppCompatActivity {
         for (String iso : isoValues) {
             Chip chip = createProChip(iso);
             chipGroupIso.addView(chip);
-            if (iso.equals(selectedIso)) chip.setChecked(true);
+            if (iso.equals(selectedIso)) {
+                chip.setChecked(true);
+                chip.setScaleX(1.15f);
+                chip.setScaleY(1.15f);
+            }
         }
         chipGroupIso.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (!checkedIds.isEmpty()) {
                 Chip chip = group.findViewById(checkedIds.get(0));
-                if (chip != null) selectedIso = chip.getText().toString();
+                if (chip != null) {
+                    selectedIso = chip.getText().toString();
+                    chip.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                    animateChipSelection(group, chip);
+                }
             }
         });
     }
@@ -433,12 +511,20 @@ public class MainActivity extends AppCompatActivity {
         for (String speed : shutterValues) {
             Chip chip = createProChip(speed);
             chipGroupShutter.addView(chip);
-            if (speed.equals(selectedShutter)) chip.setChecked(true);
+            if (speed.equals(selectedShutter)) {
+                chip.setChecked(true);
+                chip.setScaleX(1.15f);
+                chip.setScaleY(1.15f);
+            }
         }
         chipGroupShutter.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (!checkedIds.isEmpty()) {
                 Chip chip = group.findViewById(checkedIds.get(0));
-                if (chip != null) selectedShutter = chip.getText().toString();
+                if (chip != null) {
+                    selectedShutter = chip.getText().toString();
+                    chip.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                    animateChipSelection(group, chip);
+                }
             }
         });
     }

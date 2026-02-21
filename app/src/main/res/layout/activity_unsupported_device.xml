@@ -3,17 +3,18 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
-    android:padding="60dp"
+    android:padding="100dp"
     android:background="#241515"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".UnsupportedDeviceActivity">
 
 
+
+
     <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/lottie_splash"
         android:layout_width="match_parent"
-
         android:layout_height="match_parent"
         android:layout_centerInParent="true"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -24,7 +25,19 @@
         app:layout_constraintVertical_bias="0.5"
         app:lottie_autoPlay="true"
         app:lottie_loop="false"
-        android:scaleType="centerCrop"
         app:lottie_rawRes="@raw/erroranimation" />
+
+    <TextView
+        android:textColor="#fff"
+        android:fontFamily="@font/poppins"
+        android:textSize="18sp"
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Your device doesn't support constrained high speed recording"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

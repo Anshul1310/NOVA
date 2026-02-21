@@ -11,7 +11,7 @@
         android:id="@+id/camera_preview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#1A1A1A" />
+        android:background="#0A0A0A" />
 
     <androidx.constraintlayout.widget.Group
         android:id="@+id/group_settings"
@@ -23,7 +23,7 @@
         android:id="@+id/toggle_fps"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="48dp"
         app:checkedButton="@+id/btn_120fps"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -150,7 +150,6 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/scroll_shutter" />
-
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.Group
@@ -170,7 +169,7 @@
         android:id="@+id/ic_recording_dot"
         android:layout_width="16dp"
         android:layout_height="16dp"
-        android:layout_marginStart="32dp"
+        android:layout_marginStart="24dp"
         android:layout_marginTop="48dp"
         android:src="@drawable/ic_record_circle"
         app:tint="#FF0000"
@@ -194,7 +193,7 @@
         android:id="@+id/settings_display_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="32dp"
+        android:layout_marginEnd="24dp"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="@+id/tv_timer"
         app:layout_constraintEnd_toEndOf="parent"
@@ -233,8 +232,8 @@
     <View
         android:id="@+id/waveform_placeholder"
         android:layout_width="match_parent"
-        android:layout_height="120dp"
-        android:layout_marginBottom="24dp"
+        android:layout_height="100dp"
+        android:layout_marginBottom="32dp"
         android:background="#15FFFFFF"
         app:layout_constraintBottom_toTopOf="@+id/btn_stop" />
 
@@ -256,7 +255,7 @@
         android:id="@+id/btn_stop"
         android:layout_width="80dp"
         android:layout_height="80dp"
-        android:layout_marginBottom="80dp"
+        android:layout_marginBottom="64dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:clickable="true"
         android:focusable="true"
