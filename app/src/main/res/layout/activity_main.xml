@@ -17,7 +17,7 @@
         android:id="@+id/group_settings"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:constraint_referenced_ids="toggle_fps,bottom_panel" />
+        app:constraint_referenced_ids="toggle_fps,btn_video_list,bottom_panel" />
 
     <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/toggle_fps"
@@ -50,13 +50,27 @@
             app:strokeColor="@color/gray_unselected" />
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_video_list"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="View Recordings"
+        android:textColor="@color/pro_accent_yellow"
+        app:icon="@android:drawable/ic_menu_gallery"
+        app:iconTint="@color/pro_accent_yellow"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toggle_fps" />
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/bottom_panel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/surface_dark_transparent"
         android:paddingTop="16dp"
-        android:paddingBottom="32dp"
+        android:paddingBottom="64dp"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <TextView
@@ -242,7 +256,7 @@
         android:id="@+id/btn_stop"
         android:layout_width="80dp"
         android:layout_height="80dp"
-        android:layout_marginBottom="48dp"
+        android:layout_marginBottom="80dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:clickable="true"
         android:focusable="true"

@@ -110,6 +110,12 @@ public class MainActivity extends AppCompatActivity {
         btnRecord.setOnClickListener(v -> startRecording());
         btnPauseResume.setOnClickListener(v -> togglePauseResume());
         btnStop.setOnClickListener(v -> stopRecording());
+
+        // Video List Navigation
+        View btnVideoList = findViewById(R.id.btn_video_list);
+        if (btnVideoList != null) {
+            btnVideoList.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, VideoList.class)));
+        }
     }
 
     @Override
@@ -257,9 +263,6 @@ public class MainActivity extends AppCompatActivity {
         int fps = Integer.parseInt(selectedFps);
         mediaRecorder = new MediaRecorder();
 
-        // ==========================================
-        // RESTORED: EXACT SETUP FROM YOUR OLD CODE
-        // ==========================================
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
@@ -271,8 +274,8 @@ public class MainActivity extends AppCompatActivity {
         videoFile = new File(videoFolder, "VID_" + System.currentTimeMillis() + ".mp4");
         mediaRecorder.setOutputFile(videoFile.getAbsolutePath());
 
-        mediaRecorder.setVideoEncodingBitRate(100_000_000); // 100 Mbps (From your old code)
-        mediaRecorder.setVideoFrameRate(fps);               // 120 or 240
+        mediaRecorder.setVideoEncodingBitRate(100_000_000);
+        mediaRecorder.setVideoFrameRate(fps);
         mediaRecorder.setVideoSize(1920, 1080);
         mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
         mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
@@ -312,9 +315,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (videoFile != null) {
+            // Calculate format string for duration
             String durationStr = String.format("%02d:%02d", secondsRecorded / 60, secondsRecorded % 60);
+
+            // Format: duration,fps,iso,shutter
             String metadata = durationStr + "," + selectedFps + "," + selectedIso + "," + selectedShutter;
 
+            // Save settings into SharedPreferences using the exact filename as the key
             getSharedPreferences("VideoMetadata", MODE_PRIVATE)
                     .edit()
                     .putString(videoFile.getName(), metadata)
@@ -349,18 +356,13 @@ public class MainActivity extends AppCompatActivity {
     public void applyManualSettingsToCamera(CaptureRequest.Builder builder) {
         int fps = Integer.parseInt(selectedFps);
 
-        // 1. Apply Manual UI Settings
         builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
         builder.set(CaptureRequest.SENSOR_SENSITIVITY, Integer.parseInt(selectedIso));
         builder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, calculateShutterSpeedNanos(selectedShutter));
 
-        // 2. REQUIRED FOR HIGH FPS IN MANUAL MODE: Frame Duration!
-        // When Auto-Exposure is OFF, the camera ignores the Target FPS range. We MUST tell the
-        // sensor exactly how long each frame is allowed to take to force 120/240 outputs.
         long frameDurationNanos = 1_000_000_000L / fps;
         builder.set(CaptureRequest.SENSOR_FRAME_DURATION, frameDurationNanos);
 
-        // 3. Keep the target range set to satisfy the HighSpeed Session requirement rules
         builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range<>(fps, fps));
     }
 

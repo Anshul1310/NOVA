@@ -6,15 +6,15 @@ public class VideoItem {
     private int fps;
     private int iso;
     private String shutterSpeed;
-    private int thumbnailResId; // Using a drawable resource for this example
+    private String path; // NEW: The absolute path to the .mp4 file
 
-    public VideoItem(String name, String duration, int fps, int iso, String shutterSpeed, int thumbnailResId) {
+    public VideoItem(String name, String duration, int fps, int iso, String shutterSpeed, String path) {
         this.name = name;
         this.duration = duration;
         this.fps = fps;
         this.iso = iso;
         this.shutterSpeed = shutterSpeed;
-        this.thumbnailResId = thumbnailResId;
+        this.path = path;
     }
 
     public String getName() { return name; }
@@ -22,5 +22,5 @@ public class VideoItem {
     public int getFps() { return fps; }
     public int getIso() { return iso; }
     public String getShutterSpeed() { return shutterSpeed; }
-    public int getThumbnailResId() { return thumbnailResId; }
+    public String getPath() { return path; } // NEW
 }
