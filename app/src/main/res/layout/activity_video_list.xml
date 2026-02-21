@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
-    android:background="#fff"
+
+    android:background="#241515"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".VideoList">
@@ -16,9 +17,9 @@
         android:text="Recorded Videos"
         android:textSize="25dp"
         android:textStyle="bold"
-        android:textColor="#111827"
+        android:textColor="#fff"
         android:layout_marginLeft="20dp"
-        android:layout_marginTop="25dp"
+        android:layout_marginTop="45dp"
         android:fontFamily="@font/poppins"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

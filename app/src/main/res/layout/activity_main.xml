@@ -157,13 +157,23 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:constraint_referenced_ids="recording_overlay,tv_timer,btn_stop,btn_pause_resume,ic_recording_dot,settings_display_layout,waveform_placeholder" />
+        app:constraint_referenced_ids="recording_overlay,img_center_recording,tv_timer,btn_stop,btn_pause_resume,ic_recording_dot,settings_display_layout,waveform_placeholder" />
 
     <View
         android:id="@+id/recording_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#FF000000" />
+
+    <ImageView
+        android:id="@+id/img_center_recording"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:src="@drawable/circle"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <ImageView
         android:id="@+id/ic_recording_dot"
